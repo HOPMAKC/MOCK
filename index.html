@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gjvzybnt vj`ckjdj</title>
+  <title>Каталог: переход на Яндекс Диск</title>
   <style>
     :root {
       --bg: #f5f7fa;
@@ -64,26 +64,22 @@
     ul.playlist { list-style: none; padding: 0; margin: 0 0 24px 0; }
     ul.playlist li { margin: 8px 0; }
 
+    /* Ссылка выглядит как кнопка */
     ul.playlist a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer; /* чтобы было видно, что это кликабельно */
       display: inline-block;
+      padding: 10px 16px;
+      background: #f3f4f6;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
     }
-    ul.playlist a:hover { text-decoration: underline; }
-
-    #player-container { width: 100%; margin-top: 24px; }
-
-    video {
-      width: 100%;
-      max-width: 640px;
-      border-radius: 8px;
-      background: #000;
+    ul.playlist a:hover {
+      background: #e5e7eb;
+      border-color: var(--accent);
+      color: var(--accent);
     }
-    audio { width: 100%; }
-
-    #debug { margin-top: 16px; font-size: 13px; color: #666; }
   </style>
 </head>
 <body>
@@ -94,93 +90,69 @@
       <select id="themeSelect">
         <option value="">-- Выберите тему --</option>
       </select>
-      <button onclick="loadTracks()">Загрузить треки</button>
+      <button onclick="loadLinks()">Показать ссылки</button>
     </div>
 
     <ul id="playlist" class="playlist"></ul>
-    <div id="player-container"></div>
-    <div id="debug"></div>
   </div>
 
-  <script src="catalog.js"></script>
-
   <script>
-    const debugEl = document.getElementById('debug');
-    function log(msg) {
-      if (debugEl) debugEl.textContent = 'Отладка: ' + msg;
-    }
+    // Сюда вставляй ссылки на страницы Яндекс Диска (те самые /i/ и /d/)
+    const catalog = {
+      "Смерть психологам": [
+        {
+          name: "Автоматизация смерти",
+          url: "https://disk.yandex.ru/i/HM5tkB5v8CABTA"
+        },
+        {
+          name: "Номер смерти",
+          url: "https://disk.yandex.ru/i/fUAWZAqj51TSIQ"
+        }
+      ],
+      "Модели психологии": [
+        {
+          name: "В моменте и в потоке",
+          url: "https://disk.yandex.ru/i/x3mYJU_RYkPikQ"
+        },
+        {
+          name: "Ложь распределения",
+          url: "https://disk.yandex.ru/i/_uTIf-GvRNCRuw"
+        }
+      ],
+      "Смыслы слов": [
+        {
+          name: "Тексты и звуки",
+          url: "https://disk.yandex.ru/d/42DNtVgTCJVFXA"
+        }
+      ]
+    };
 
-    // Заполняем список тем при загрузке страницы
     const select = document.getElementById('themeSelect');
-    if (typeof catalog !== 'undefined') {
-      for (const theme in catalog) {
-        const option = document.createElement('option');
-        option.value = theme;
-        option.textContent = theme;
-        select.appendChild(option);
-      }
-    } else {
-      log('Ошибка: не найден объект catalog в catalog.js');
+    const playlist = document.getElementById('playlist');
+
+    // Заполняем выпадающий список темами
+    for (const theme in catalog) {
+      const option = document.createElement('option');
+      option.value = theme;
+      option.textContent = theme;
+      select.appendChild(option);
     }
 
-    function loadTracks() {
+    function loadLinks() {
       const theme = select.value;
-      const list = document.getElementById('playlist');
-      const playerContainer = document.getElementById('player-container');
+      playlist.innerHTML = '';
 
-      list.innerHTML = '';
-      playerContainer.innerHTML = '';
-      log('');
+      if (!theme || !catalog[theme]) return;
 
-      if (!theme) return;
-      if (!catalog || !catalog[theme]) {
-        log('Нет треков для темы: ' + theme);
-        return;
-      }
-
-      catalog[theme].forEach((track, index) => {
+      catalog[theme].forEach(item => {
         const li = document.createElement('li');
-        const link = document.createElement('a');
-        link.textContent = escapeHtml(track.name);
-        link.style.cursor = 'pointer';
-
-        // Навешиваем клик напрямую — без href="#"
-        link.addEventListener('click', () => {
-          showMedia(track);
-        });
-
-        li.appendChild(link);
-        list.appendChild(li);
+        const a = document.createElement('a');
+        a.href = item.url;
+        a.textContent = item.name;
+        a.target = '_blank'; // открывать в новой вкладке
+        li.appendChild(a);
+        playlist.appendChild(li);
       });
-    }
-
-    function showMedia(track) {
-      const container = document.getElementById('player-container');
-      container.innerHTML = '';
-      log('Воспроизведение: ' + track.name);
-
-      if (track.type === 'video') {
-        const video = document.createElement('video');
-        video.src = track.url;
-        video.controls = true;
-        container.appendChild(video);
-        // Важно: не пытаемся автоплей без взаимодействия пользователя
-      } else {
-        const audio = document.createElement('audio');
-        audio.src = track.url;
-        audio.controls = true;
-        container.appendChild(audio);
-      }
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
     }
   </script>
 </body>
