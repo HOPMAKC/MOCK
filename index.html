@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Помяните моё слово.</title>
+  <title>Музыкальный и видео плеер</title>
   <style>
     :root {
       --bg: #f5f7fa;
@@ -31,11 +31,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
 
-    h1 {
-      margin-top: 0;
-      font-size: 24px;
-      color: var(--text);
-    }
+    h1 { margin-top: 0; font-size: 24px; color: var(--text); }
 
     .controls {
       display: flex;
@@ -63,36 +59,21 @@
       cursor: pointer;
       transition: background 0.2s;
     }
+    button:hover { background-color: #4338ca; }
 
-    button:hover {
-      background-color: #4338ca;
-    }
-
-    ul.playlist {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 24px 0;
-    }
-
-    ul.playlist li {
-      margin: 8px 0;
-    }
+    ul.playlist { list-style: none; padding: 0; margin: 0 0 24px 0; }
+    ul.playlist li { margin: 8px 0; }
 
     ul.playlist a {
       color: var(--accent);
       text-decoration: none;
       font-weight: 500;
+      cursor: pointer; /* чтобы было видно, что это кликабельно */
       display: inline-block;
     }
+    ul.playlist a:hover { text-decoration: underline; }
 
-    ul.playlist a:hover {
-      text-decoration: underline;
-    }
-
-    #player-container {
-      width: 100%;
-      margin-top: 24px;
-    }
+    #player-container { width: 100%; margin-top: 24px; }
 
     video {
       width: 100%;
@@ -100,15 +81,9 @@
       border-radius: 8px;
       background: #000;
     }
+    audio { width: 100%; }
 
-    audio {
-      width: 100%;
-    }
-
-    @media (max-width: 600px) {
-      .container { padding: 20px; }
-      select { width: 100%; }
-    }
+    #debug { margin-top: 16px; font-size: 13px; color: #666; }
   </style>
 </head>
 <body>
@@ -124,26 +99,57 @@
 
     <ul id="playlist" class="playlist"></ul>
     <div id="player-container"></div>
+    <div id="debug"></div>
   </div>
 
-  <!-- Подключаем каталог с треками -->
   <script src="catalog.js"></script>
 
   <script>
+    const debugEl = document.getElementById('debug');
+    function log(msg) {
+      if (debugEl) debugEl.textContent = 'Отладка: ' + msg;
+    }
+
+    // Заполняем список тем при загрузке страницы
+    const select = document.getElementById('themeSelect');
+    if (typeof catalog !== 'undefined') {
+      for (const theme in catalog) {
+        const option = document.createElement('option');
+        option.value = theme;
+        option.textContent = theme;
+        select.appendChild(option);
+      }
+    } else {
+      log('Ошибка: не найден объект catalog в catalog.js');
+    }
+
     function loadTracks() {
-      const theme = document.getElementById('themeSelect').value;
+      const theme = select.value;
       const list = document.getElementById('playlist');
       const playerContainer = document.getElementById('player-container');
 
       list.innerHTML = '';
-      playerContainer.innerHTML = ''; // очищаем плеер
+      playerContainer.innerHTML = '';
+      log('');
 
-      if (!theme || !catalog[theme]) return;
+      if (!theme) return;
+      if (!catalog || !catalog[theme]) {
+        log('Нет треков для темы: ' + theme);
+        return;
+      }
 
-      catalog[theme].forEach(track => {
+      catalog[theme].forEach((track, index) => {
         const li = document.createElement('li');
-        // Безопасная передача объекта через JSON.stringify
-        li.innerHTML = `<a href="#" onclick="showMedia(${JSON.stringify(track)}); return false;">${escapeHtml(track.name)}</a>`;
+        const link = document.createElement('a');
+        link.textContent = escapeHtml(track.name);
+        link.style.cursor = 'pointer';
+
+        // Навешиваем клик напрямую — без href="#"
+        link.addEventListener('click', () => {
+          showMedia(track);
+        });
+
+        li.appendChild(link);
         list.appendChild(li);
       });
     }
@@ -151,12 +157,14 @@
     function showMedia(track) {
       const container = document.getElementById('player-container');
       container.innerHTML = '';
+      log('Воспроизведение: ' + track.name);
 
       if (track.type === 'video') {
         const video = document.createElement('video');
         video.src = track.url;
         video.controls = true;
         container.appendChild(video);
+        // Важно: не пытаемся автоплей без взаимодействия пользователя
       } else {
         const audio = document.createElement('audio');
         audio.src = track.url;
@@ -165,7 +173,6 @@
       }
     }
 
-    // Простая защита от XSS: экранируем спецсимволы в названиях
     function escapeHtml(str) {
       if (!str) return '';
       return str
